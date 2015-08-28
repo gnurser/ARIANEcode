@@ -76,5 +76,5 @@ echo "In $dirname"
 sed -i "s/WINDAGEPERCENT/$windage/g" namelist
 
 # Submit batch job
-sbatch -J AR$dirname ariane_run 
+sbatch -J AR$dirname ../ariane_run
 exit
