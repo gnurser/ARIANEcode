@@ -1,0 +1,17 @@
+#!/bin/bash
+export PKGROOT=/home/jeff/packages
+export PKGARCH=xAVX/intel12.1
+export NETCDF4_ROOT=${PKGROOT}/netcdf4
+export NCF4_DIR=${NETCDF4_ROOT}/netcdf-c-4.3.3.1/${PKGARCH}
+export NCFF_DIR=${NETCDF4_ROOT}/netcdf-fortran-4.4.2/${PKGARCH}
+export HDF5_DIR=${PKGROOT}/hdf5/hdf5-1.8.14/${PKGARCH}
+export NCF4_LIB=${NCF4_DIR}/lib
+export NCFF_LIB=${NCFF_DIR}/lib
+export HDF5_LIB=${HDF5_DIR}/lib
+export NETCDF_INC=${NCFF_DIR}/include
+export NETCDF_LIB=${NCF4_LIB}
+export HDF5_INC=${HDF5_DIR}/include
+export LIBS="-L${NCFF_LIB} -lnetcdff -L${NCF4_LIB} -lnetcdf -L${HDF5_LIB} -lhdf5_hl -lhdf5 -lz"
+
+export LD_LIBRARY_PATH=${NCFF_LIB}:${NCF4_LIB}:${HDF5_LIB}:${LD_LIBRARY_PATH}
+

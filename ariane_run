@@ -1,0 +1,38 @@
+#!/bin/bash
+#!
+#SBATCH --nodes=1
+#SBATCH --tasks-per-node=1
+#SBATCH --ntasks=1
+#SBATCH --exclusive
+#SBATCH --time=60:00
+
+# Runs ariane excutable as a batch job; currently 60 min max, you will need more for 3D e.g.
+## SBATCH --time=12:00:00
+
+# Ensure ifort is loaded
+module load intel/compiler/64/14.0/2013_sp1.2.144
+
+# Setup LD_LIBRARY_PATH so we have access to required libraries
+export PKGROOT=/home/jeff/packages
+export PKGARCH=xAVX/intel12.1
+export NETCDF4_ROOT=${PKGROOT}/netcdf4
+export NCF4_DIR=${NETCDF4_ROOT}/netcdf-c-4.3.3.1/${PKGARCH}
+export NCFF_DIR=${NETCDF4_ROOT}/netcdf-fortran-4.4.2/${PKGARCH}
+export HDF5_DIR=${PKGROOT}/hdf5/hdf5-1.8.14/${PKGARCH}
+export NCF4_LIB=${NCF4_DIR}/lib
+export NCFF_LIB=${NCFF_DIR}/lib
+export HDF5_LIB=${HDF5_DIR}/lib
+export NETCDF_LIB=${NCF4_LIB}
+
+export LD_LIBRARY_PATH=${NCFF_LIB}:${NCF4_LIB}:${HDF5_LIB}:${LD_LIBRARY_PATH}
+
+
+date
+echo "job starting"
+echo "----------------------------"
+/usr/bin/time -v /hpcdata/scratch/agn/ARIANE/opt/bin/ariane > ariane.out
+date
+echo "job finished"
+echo "----------------------------"
+
+exit

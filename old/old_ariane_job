@@ -1,0 +1,60 @@
+#!/bin/bash
+#!
+#SBATCH --job-name=ARI_agn
+#SBATCH --nodes=1
+#SBATCH --tasks-per-node=1
+#SBATCH --ntasks=1
+#SBATCH --exclusive
+#SBATCH --time=60:00
+
+# Normal usage might be
+# ariane_job namelist> <name of run directory to create>
+# Read in values
+namelist=$1
+dirname=$2
+echo "namelist=$namelist"
+echo "dirname=$dirname"
+
+export PKGROOT=/home/jeff/packages
+export PKGARCH=xAVX/intel12.1
+export NETCDF4_ROOT=${PKGROOT}/netcdf4
+export NCF4_DIR=${NETCDF4_ROOT}/netcdf-c-4.3.3.1/${PKGARCH}
+export NCFF_DIR=${NETCDF4_ROOT}/netcdf-fortran-4.4.2/${PKGARCH}
+export HDF5_DIR=${PKGROOT}/hdf5/hdf5-1.8.14/${PKGARCH}
+export NCF4_LIB=${NCF4_DIR}/lib
+export NCFF_LIB=${NCFF_DIR}/lib
+export HDF5_LIB=${HDF5_DIR}/lib
+export NETCDF_LIB=${NCF4_LIB}
+
+export LD_LIBRARY_PATH=${NCFF_LIB}:${NCF4_LIB}:${HDF5_LIB}:${LD_LIBRARY_PATH}
+
+
+if [ ! -d $dirname ]; then
+    mkdir $dirname
+else
+    echo "$dirname already exists"
+    exit 1
+fi
+
+cp -p $namelist $dirname/namelist
+grep -hv '^@' release_box.dat > $dirname/initial_positions.txt
+if [ -f region_limits ]; then
+    cp -p region_limits $dirname
+fi
+
+cd $dirname
+echo "In $dirname"
+
+ln -sf /hpcdata/scratch/agn/ARIANE/opt/bin/ariane .
+if [ ! -d TRAJIMG ]; then
+    mkdir TRAJIMG
+fi
+date
+echo "ARI_agn job starting"
+echo "----------------------------"
+/usr/bin/time -v ./ariane >& ariane.out
+date
+echo "ARI_agn job finished"
+echo "----------------------------"
+
+exit

@@ -1,0 +1,153 @@
+#!/bin/bash
+# Normal usage might be
+# for optimized version
+# install_ariane -p /hpcdata/scratch/agn/ARIANE
+# for debug version
+# install_ariane -p /hpcdata/scratch/agn/ARIANE -d
+
+### Start getopts code ###
+# from http://tuxtweaks.com/2014/05/bash-getopts/
+#Parse command line flags
+#If an option should be followed by an argument, it should be followed by a ":".
+#Notice there is no ":" after "d".
+
+# Default values
+variant=opt
+package=$PWD
+builddir='.'
+check=False
+
+while getopts b:p:dc FLAG; do
+    #echo "$OPTIND"
+    case $FLAG in
+	p)  #set installation directory
+	    package=$OPTARG
+	    #echo "-a used: $OPTARG"
+	    #echo "package = $package"
+	    ;;
+	b)  #set build directory
+	    builddir=$OPTARG
+	    #echo "-a used: $OPTARG"
+	    #echo "builddir = $builddir"
+	    ;;
+	d)  #compile debug options
+	    variant=debug
+	    ;;
+	c)  #compile debug options
+	    check=True
+	    ;;
+	\?) #unrecognized option
+	    exit 2
+	    ;;
+    esac
+done
+
+#This tells getopts to move on to the next argument, so now $1 etc
+# relate to further arguments not handled by getopts
+# Not actually needed here, though
+shift $((OPTIND-1))
+### end of getopts code ###
+
+echo "variant=$variant"
+echo "package=$package"
+echo "executable will be installed into $package/$variant/bin"
+echo "builddir=$builddir"
+
+# Specifies and creates build directory. This is because compilation actually changes files,
+#  so real pain if you want to use version control
+
+if [ "$builddir" != "." ]; then
+    if [ ! -d $builddir ]; then
+	mkdir -p $builddir
+    else
+	rm -rf $builddir
+	mkdir $builddir
+fi
+    cp -pr * $builddir
+    cd $builddir
+    echo "moved to $builddir"
+fi
+
+
+# Specifies and creates install directory.
+
+installdir=$package/$variant
+if [ ! -d $installdir ]; then
+    mkdir $installdir
+else
+    rm -rf $installdir
+    mkdir $installdir
+fi
+
+# Setup compilation flags.
+
+export CC=icc
+export CXX=icpc
+export FC=ifort
+export F77=ifort
+export F90=ifort
+export CPP='icc -E'
+export CXXCPP='icpc -E'
+export CFLAGS='-fpe0'
+export CXXFLAGS='-fpe0'
+export FCFLAGS='-fpe0'
+export FFLAGS='-fpe0'
+export FCFLAGS_f90='-fpe0'
+
+if [ "${variant}" == "debug" ]; then
+    export DEBUG='-check all -ftrapuv -g -traceback -warn all'
+    export CFLAGS="${DEBUG} ${CFLAGS}"
+    export CXXFLAGS="${DEBUG} ${CXXFLAGS}"
+    export FCFLAGS="${DEBUG} ${FCFLAGS}"
+    export FFLAGS="${DEBUG} ${FFLAGS}"
+    export FCFLAGS_f90="${DEBUG} ${FCFLAGS_f90}"
+else
+    export CFLAGS='-fpe0 -static-intel -no-multibyte-chars'
+    export CXXFLAGS='-xAVX -O3 -ip -mp1 -fpe0 -static-intel -no-multibyte-chars'
+    export FCFLAGS='-xAVX -O3 -ip -mp1 -fpe0 -static-intel'
+    export FFLAGS='-xAVX -O3 -ip -mp1 -fpe0 -static-intel'
+    export FCFLAGS_f90='-xAVX -O3 -ip -mp1 -fpe0 -static-intel'
+fi
+# Unpleasant fix; shouldn't be necessary, but flags don't seem to be honoured by configure
+# if they are not forcibly added like this
+export FC="$FC $FCFLAGS"
+
+# Setup LIBS and LD_LIBRARY_PATH so we have access to required libraries
+export PKGROOT=/home/jeff/packages
+export PKGARCH=xAVX/intel12.1
+export NETCDF4_ROOT=${PKGROOT}/netcdf4
+export NCF4_DIR=${NETCDF4_ROOT}/netcdf-c-4.3.3.1/${PKGARCH}
+export NCFF_DIR=${NETCDF4_ROOT}/netcdf-fortran-4.4.2/${PKGARCH}
+export HDF5_DIR=${PKGROOT}/hdf5/hdf5-1.8.14/${PKGARCH}
+export NCF4_LIB=${NCF4_DIR}/lib
+export NCFF_LIB=${NCFF_DIR}/lib
+export HDF5_LIB=${HDF5_DIR}/lib
+export NETCDF_INC=${NCFF_DIR}/include
+export NETCDF_LIB=${NCF4_LIB}
+export HDF5_INC=${HDF5_DIR}/include
+export LIBS="-L${NCFF_LIB} -lnetcdff -L${NCF4_LIB} -lnetcdf -L${HDF5_LIB} -lhdf5_hl -lhdf5 -lz"
+
+export LD_LIBRARY_PATH=${NCFF_LIB}:${NCF4_LIB}:${HDF5_LIB}:${LD_LIBRARY_PATH}
+
+# Configure
+
+echo -e "\n configuring"
+./configure --prefix=$installdir --enable-hdf5 &> $installdir/configure.out.xAVX.shared.$variant
+
+# Make
+echo -e  "\n making"
+make &> $installdir/make.out || exit_on_error"Make failed"
+
+# & install ...
+echo -e  "\n installing"
+make install &> $installdir/make.install.out.opt
+
+# always seems to fail trying to make tools etc..
+if [ "$check" == "True" ]; then
+    echo -e "\n checking"
+    make check &> $installdir/make.check.out.opt
+fi
+echo -e "\n cleaning up"
+make clean &> $installdir/make.clean.out.opt
+make distclean &> $installdir/make.distclean.out.opt
+
