@@ -19,13 +19,13 @@ from shapely.geometry.polygon import Polygon
 from traj_movie import get_circles
 
 def create_initial_positions(xdivide=10, ydivide=10,lon0=55.,lon1=56.,lat0=-21.5, lat1=-20.5
-                            ,start=147, kdepth=-1.5, outfile='initial_positions.txt', res='0083', crop=False):
+                            ,start=147, kdepth=-1.5, crop=False,
+                             outfile='initial_positions.txt',  domain_dir='/Users/agn/Data/NEMO0083'):
 
     lons = np.linspace(lon0, lon1, xdivide+1)
     lats = np.linspace(lat0, lat1, ydivide+1)
 
-    domaindir=pjoin('/Users/agn/Data/NEMO',res)
-    path = pjoin(domaindir,'mask.nc')
+    path = pjoin(domain_dir,'mask.nc')
     print('path for mask file', path)
     with Dataset(path) as f:
         Ndlat = f.variables['nav_lat']
@@ -88,14 +88,14 @@ def create_initial_positions(xdivide=10, ydivide=10,lon0=55.,lon1=56.,lat0=-21.5
     print('# of sea points started is %g out of %g' % (npoints, len(rj)*len(ri)))
 
 def create_initial_positions3(xdivide=10, ydivide=10,lon0=55.,lon1=56.,lat0=-21.5, lat1=-20.5
-                            ,start=1, zdivide=10, k0=56., k1=60., outfile='initial_positions.txt', res='0083', crop=False):
+                            ,start=1, zdivide=10, k0=56., k1=60., crop=False,
+                             outfile='initial_positions.txt', domain_dir='/Users/agn/Data/NEMO0083'):
 
     lons = np.linspace(lon0, lon1, xdivide+1)
     lats = np.linspace(lat0, lat1, ydivide+1)
     kdepths = np.linspace(k0, k1, zdivide+1)
-    
-    domaindir=pjoin('/Users/agn/Data/NEMO',res)
-    path = pjoin(domaindir,'mask.nc')
+
+    path = pjoin(domain_dir,'mask.nc')
     print('path for mask file', path)
     with Dataset(path) as f:
         Ndlat = f.variables['nav_lat']
@@ -164,8 +164,6 @@ if __name__ == '__main__':
     """
     produce movie of particle positions
     """)
-    parser.add_argument('--res',dest='res',
-                        help="model resolution ",default='0083')
     parser.add_argument('--nx',dest='xdivide',
                         help="x divisions ",type=int, default=100)
     parser.add_argument('--ny',dest='ydivide',
@@ -190,8 +188,10 @@ if __name__ == '__main__':
                         help="max depth in terms of k (k=1 is ths surface) ",type=float, default=None)
     parser.add_argument('--start',dest='start',
                         help="starting time index",type=int, default=None)
-    parser.add_argument('--outfile', '-o',dest='outfile',
+    parser.add_argument('--outfile', '-o', dest='outfile',
                         help="output file of points ",default='initial_positions.txt')
+    parser.add_argument('-d', '--domain_dir', dest='domain_dir',
+                        help="domain containing mesh files", default='/Users/Data/NEMO/0083')
     parser.add_argument('--crop', '-c',dest='crop', action='store_true',
                         help="crop by satellite zone ",default=False)
     args = parser.parse_args()
@@ -199,11 +199,11 @@ if __name__ == '__main__':
     if (args.k0 is None) or (args.k1 is None):
         create_initial_positions(xdivide=args.xdivide, ydivide=args.ydivide,
                                                      lon0=args.lon0,lon1=args.lon1,lat0=args.lat0, lat1=args.lat1,
-                                                     start=args.start, kdepth=args.kdepth, outfile=args.outfile,
-                                                     res=args.res, crop=args.crop)
+                                                     start=args.start, kdepth=args.kdepth, crop=args.crop,
+                                                     domain_dir = args.domain_dir, outfile=args.outfile)
     else:
         create_initial_positions3(xdivide=args.xdivide, ydivide=args.ydivide, zdivide=args.zdivide,
                                                      lon0=args.lon0,lon1=args.lon1,lat0=args.lat0, lat1=args.lat1,
-                                                     start=args.start, k0=args.k0, k1=args.k1, outfile=args.outfile,
-                                                     res=args.res, crop=args.crop)
-        
+                                                     start=args.start, k0=args.k0, k1=args.k1, crop=args.crop,
+                                                     domain_dir = args.domain_dir, outfile=args.outfile)
+
