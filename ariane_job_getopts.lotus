@@ -1,0 +1,81 @@
+#!/bin/bash
+#!
+
+# Normal usage might be
+# ./ariane_job_getopts -d <new dir name> -n < namelist name> -i < initial position file> -w <n>
+
+# Default values
+namelist=namelist_ariane_sequential
+dirname=$PWD
+initial=initial_positions.txt
+windage=0
+
+# options with colons afterwards require argiuments; those without don't. See
+# http://wiki.bash-hackers.org/howto/getopts_tutorial
+# http://tuxtweaks.com/2014/05/bash-getopts/
+
+while getopts d:n:i:w: FLAG; do
+    case $FLAG in
+	d)  #set installation directory
+	    dirname=$OPTARG
+	    #echo "-a used: $OPTARG"
+	    #echo "package = $package"
+	    ;;
+	n)  #set namelist name
+	    namelist=$OPTARG
+	    #echo "-a used: $OPTARG"
+	    #echo "builddir = $builddir"
+	    ;;
+	i)  #set initial positions filename
+	    initial=$OPTARG
+	    #echo "-a used: $OPTARG"
+	    #echo "builddir = $builddir"
+	    ;;
+	w)  #set windage
+	    windage=$OPTARG
+	    #echo "-a used: $OPTARG"
+	    #echo "builddir = $builddir"
+	    ;;
+	\?) #unrecognized option
+	    exit 2
+	    ;;
+    esac
+done
+
+#This tells getopts to move on to the next argument, so now $1 etc
+# relate to further arguments not handled by getopts
+# Not actually needed here, though
+shift $((OPTIND-1))
+### end of getopts code ###
+
+echo "namelist = $namelist"
+echo "dirname = $dirname"
+echo "windage = $windage"
+echo "initial position file = $initial"
+
+# Create new directory for run; if it exists, bail out
+if [ ! -d $dirname ]; then
+    mkdir $dirname
+else
+    echo "$dirname already exists"
+    exit 1
+fi
+
+# Copy namelist and initial positions
+# if region_limits file exists copy it as well
+cp -p $namelist $dirname/namelist
+cp -p $initial $dirname/initial_positions.txt
+#grep -hv '^@' release_box.dat > $dirname/initial_positions.txt
+if [ -f region_limits ]; then
+    cp -p region_limits $dirname
+fi
+
+cd $dirname
+echo "In $dirname"
+
+# insert windage % into the namelist
+sed -i "s/WINDAGEPERCENT/$windage/g" namelist
+
+# Submit batch job
+bsub -J $dirname < ../ariane_run.lotus
+exit
