@@ -1,0 +1,34 @@
+#!/bin/bash
+#!
+#BSUB -q lotus
+##BSUB -R select[maxmem &gt> 128000] rusage[mem=150000]
+#BSUB -R rusage[mem=25000]
+#BSUB -o %J.o
+#BSUB -e %J.e
+#BSUB -W 24:00
+
+# Runs ariane excutable as a batch job; currently 60 min max, you will need more for 3D e.g.
+
+# remove anaconda from path
+anaconda_off
+
+
+# Ensure ifort is loaded
+module load intel/14.0
+module load netcdf/intel/14.0/4.3.2
+module load netcdff/intel/14.0/4.2
+module load libPHDF5/intel/14.0/1.8.12
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/apps/libs/PHDF5/intel14/1.8.12/lib
+echo $PWD
+path
+libpath
+
+date
+echo "job starting"
+echo "----------------------------"
+/usr/bin/time -v /group_workspaces/jasmin2/nemo/vol1/agn/BUILT/ARIANE/opt/bin/ariane > ariane.out
+date
+echo "job finished"
+echo "----------------------------"
+
+exit
