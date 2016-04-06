@@ -26,7 +26,7 @@ libpath
 date
 echo "job starting"
 echo "----------------------------"
-/usr/bin/time -v /group_workspaces/jasmin2/nemo/vol1/agn/BUILT/ARIANE/opt/bin/ariane > ariane.out
+/usr/bin/time -v ~/BUILT/ARIANE/opt/bin/ariane > ariane.out
 date
 echo "job finished"
 echo "----------------------------"
