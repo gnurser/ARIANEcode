@@ -65,7 +65,7 @@ def link_5d_files(rootdir, vbles = ('T','U','V','W'), link_dir = 'links',
         print(' *.%s-files :last link has index' % vble, len(paths) + first_link - 1)
 
 if __name__ == '__main__':
-    usage = "usage: %prog oldstring newstring"
+    usage = "usage: %(prog)s oldstring newstring"
     parser = ArgumentParser(usage=usage)
     parser.add_argument('rootdir')
     parser.add_argument('-v','--variables',dest='variables',help='file suffices to link',nargs= '*', default=None)
