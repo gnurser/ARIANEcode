@@ -8,21 +8,40 @@ import os.path
 from argparse import ArgumentParser
 
 def get_5d_files(rootdir,vble,
-                  yrange=None, year0=1958, year1=2012):
+                  yrange=None, year0=1958, year1=2012, runtype='standard'):
     if yrange is None:
         yrange = range(year0, year1+1)
-    tail = 'd05%s.nc' % vble
-    print ('doing', vble)
-    matches = []
-    for year in yrange:
-        year_str = '%4i' % year
-        year_dir = pjoin(rootdir, year_str)
-        print('%s' % year_str, end = ' ')
-        year_files = os.listdir(year_dir)
-        year_files.sort()
-        matches += [pjoin(year_dir, file) for file in year_files if file.endswith(tail)]
-    print()
-    return matches
+
+    if runtype=='standard':
+        tail = 'd05%s.nc' % vble
+        print ('doing', vble)
+        matches = []
+        for year in yrange:
+            year_str = '%4i' % year
+            year_dir = pjoin(rootdir, year_str)
+            print('%s' % year_str, end = ' ')
+            year_files = os.listdir(year_dir)
+            year_files.sort()
+            matches += [pjoin(year_dir, file) for file in year_files if file.endswith(tail)]
+        print()
+    elif runtype=='ROAM':
+        print ('doing', vble)
+        vble_str = 'grid_%s_' % vble
+        day_str = '_5d_'
+        matches = []
+        for year in yrange:
+            year_str = '%4i' % year
+            year_dir = pjoin(rootdir, year_str)
+            if not os.path.exists(year_dir):
+                year_str += 'C'
+                year_dir = pjoin(rootdir, year_str)
+            print('%s' % year_str, end = ' ')
+            year_files = os.listdir(year_dir)
+            year_files.sort()
+            matches += [pjoin(year_dir, file) for file in year_files if (vble_str in file and day_str in file)]
+        print()
+        
+        return matches
 
 def adjust_links(vble, paths, skip_dates, dup_dates):
     if not (skip_dates or dup_dates):
@@ -47,13 +66,13 @@ def adjust_links(vble, paths, skip_dates, dup_dates):
 
 def link_5d_files(rootdir, vbles = ('T','U','V','W'), link_dir = 'links',
                   yrange=None, year0=1958, year1=2012, test=False,
-                   first_link=1, skip_dates=[], dup_dates=[]):
+                   first_link=1, skip_dates=[], dup_dates=[], runtype='standard'):
     if yrange is None:
         yrange = range(year0, year1+1)
     if not os.path.isdir(link_dir):
         os.makedirs(link_dir)
     for vble in vbles:
-        paths = get_5d_files(rootdir, vble, yrange)
+        paths = get_5d_files(rootdir, vble, yrange=yrange, runtype=runtype)
         print(skip_dates, dup_dates)
         adjust_links(vble, paths, skip_dates[:], dup_dates[:])
         for i,path in enumerate(paths):
@@ -75,6 +94,7 @@ if __name__ == '__main__':
     parser.add_argument('-f','--first',dest='first_link', help="number for first link",  type=int, default=1)
     parser.add_argument('-s','--skip',dest='skip_dates', help="dates to skip", nargs= '*',  type=int, default=[])
     parser.add_argument('-d','--dup',dest='dup_dates', help="dates to duplicate", nargs= '*',  type=int, default=[])
+    parser.add_argument('--runtype',dest='runtype', help="type of run e.g. standard (N001/06), ROAM etc", default='standard')
     args = parser.parse_args()
 
     if args.variables is None:
@@ -84,5 +104,5 @@ if __name__ == '__main__':
     year0, year1  = args.year_range
     link_5d_files(args.rootdir, vbles = args.variables, link_dir = args.link_dir,
                   yrange=None, year0=year0, year1=year1, test=args.test,
-                   first_link=args.first_link, skip_dates=args.skip_dates, dup_dates = args.dup_dates)
+                   first_link=args.first_link, skip_dates=args.skip_dates, dup_dates = args.dup_dates, runtype=args.runtype)
 
